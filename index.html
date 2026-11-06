@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kasir QRIS</title>
+<meta name="theme-color" content="#0b57d0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Kasir QRIS">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f4f7;--surface:#fff;--ink:#12202e;--muted:#5d6b7a;--line:#d9dfe6;--accent:#0b57d0;--accent-ink:#fff;--danger:#b3261e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1720;--surface:#18232f;--ink:#eaf0f6;--muted:#9aa8b6;--line:#2a3846;--accent:#6ea2ff;--accent-ink:#0a1626;--danger:#ffb4ab;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1720;--surface:#18232f;--ink:#eaf0f6;--muted:#9aa8b6;--line:#2a3846;--accent:#6ea2ff;--accent-ink:#0a1626;--danger:#ffb4ab;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;justify-content:center}
+main{width:100%;max-width:440px;padding:20px 16px 28px}
+h1{font-size:18px;margin:0;font-weight:800}
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px}
+.link{background:none;border:0;color:var(--accent);font:inherit;font-weight:700;padding:8px 0;cursor:pointer}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.tabs button{height:42px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-weight:700;cursor:pointer}
+.tabs button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item{position:relative;text-align:left;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;min-height:68px}
+.item b{display:block;font-size:15px}.item span{color:var(--muted);font-size:13px}
+.item i{position:absolute;top:8px;right:8px;background:var(--accent);color:var(--accent-ink);border-radius:99px;font-style:normal;font-size:12px;font-weight:800;min-width:22px;height:22px;display:grid;place-items:center;padding:0 6px}
+.amount{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px;text-align:right;font-size:32px;font-weight:800;min-height:68px;overflow-x:auto;white-space:nowrap}
+.amount small{font-size:16px;color:var(--muted);margin-right:6px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.pad button{height:56px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:22px;font-weight:700;cursor:pointer}
+.cart{margin:16px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px 14px}
+.line{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.line:last-child{border-bottom:0}
+.line small{display:block;color:var(--muted)}
+.qty{display:flex;align-items:center;gap:8px}
+.qty button{width:34px;height:34px;border-radius:99px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;font-size:18px;font-weight:700;cursor:pointer}
+.go{width:100%;height:56px;border:0;border-radius:12px;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:17px;font-weight:800;cursor:pointer;margin-top:12px}
+.go:disabled{opacity:.4}
+.go.alt{background:transparent;color:var(--ink);border:1px solid var(--line)}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+textarea,input[type=text],input[type=number],input[type=search],select{width:100%;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:12px;font:inherit;font-size:15px;margin-bottom:8px}
+textarea{min-height:110px;font:13px ui-monospace,Menlo,monospace}
+p{color:var(--muted);line-height:1.5;margin:0 0 12px;font-size:14px}
+.err{color:var(--danger);font-weight:700;min-height:20px;font-size:14px}
+.qrbox{background:#fff;border-radius:16px;padding:16px;display:flex;justify-content:center;margin:12px 0}
+.total{text-align:center;font-size:30px;font-weight:800;margin:8px 0 4px}
+.hidden{display:none}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0}
+.quick button{height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.mrow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.mrow button{background:none;border:0;color:var(--danger);font:inherit;font-weight:700;cursor:pointer;padding:6px}
+.receipt{background:var(--surface);border:1px dashed var(--muted);border-radius:6px;padding:18px 16px;font:13px/1.6 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-word}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:0 0 10px;padding-bottom:2px}
+.chips:empty{display:none}
+.chips button{flex:none;height:36px;padding:0 14px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.chips button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.gh{grid-column:1/-1;font-size:13px;margin:6px 0 0;color:var(--muted);font-weight:700;letter-spacing:.02em}
+label.cap{display:block;font-size:13px;font-weight:700;color:var(--muted);margin:4px 0 6px}
+</style>
+</head>
+<body>
+<main>
+  <section id="setup" class="hidden">
+    <h1 style="margin-bottom:12px">Pasang QRIS kamu</h1>
+    <p>Unggah gambar QRIS statis kamu, atau tempel teks hasil scan-nya. Cukup sekali, tersimpan di perangkat ini.</p>
+    <input id="file" type="file" accept="image/*" style="margin-bottom:10px">
+    <textarea id="raw" placeholder="000201010211..."></textarea>
+    <div class="err" id="err"></div>
+    <button class="go" id="save">Simpan QRIS</button>
+  </section>
+
+  <section id="shop" class="hidden">
+    <div class="row"><h1>Kasir</h1><span style="display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end"><button class="link" id="toHist">Riwayat</button><button class="link" id="toItems">Barang</button><button class="link" id="toSet">Pengaturan</button><button class="link" id="change">Ganti QRIS</button></span></div>
+    <div class="tabs"><button id="tabA" class="on">Barang</button><button id="tabB">Nominal bebas</button></div>
+    <div id="paneA"><input type="search" id="q" placeholder="Cari barang atau kelompok" aria-label="Cari barang"><div class="chips" id="chips"></div><div class="grid" id="grid"></div></div>
+    <div id="paneB" class="hidden">
+      <div class="amount" id="amt"></div>
+      <div class="pad" id="pad"></div>
+      <button class="go alt" id="addFree" style="margin-top:0">Tambah ke keranjang</button>
+    </div>
+    <div class="cart" id="cart"></div>
+    <button class="go" id="pay" disabled>Bayar QRIS</button>
+    <button class="go alt" id="payCash" disabled>Bayar tunai</button>
+  </section>
+
+  <section id="items" class="hidden">
+    <div class="row"><h1>Kelola barang</h1><button class="link" id="itemsDone">Selesai</button></div>
+    <input type="text" id="store" placeholder="Nama toko (tampil di struk)">
+    <input type="text" id="iname" placeholder="Nama barang">
+    <input type="number" id="iprice" inputmode="numeric" placeholder="Harga (Rp)" min="0">
+    <input type="text" id="igroup" list="glist" placeholder="Kelompok (opsional, mis. Top Up Pulsa)"><datalist id="glist"></datalist>
+    <button class="go" id="iadd" style="margin-top:0">Tambah barang</button>
+    <div style="margin:20px 0 6px"><b>Impor dari spreadsheet</b></div>
+    <p>Kolom A nama barang, kolom B harga, kolom C kelompok (boleh kosong). Kalau kosong, kelompok diambil otomatis dari nama tanpa angka di belakangnya, misalnya "Top Up Pulsa 5.000" masuk kelompok "Top Up Pulsa". Barang dengan nama yang sama akan diperbarui.</p>
+    <input id="ifile" type="file" accept=".xlsx,.xls,.csv,.txt" style="margin-bottom:10px">
+    <textarea id="itext" placeholder="Atau tempel dari spreadsheet:&#10;Kopi susu&#9;18000&#10;Roti bakar&#9;15000"></textarea>
+    <label style="display:block;margin:4px 0 8px;font-size:14px"><input type="checkbox" id="replace" style="width:auto;margin:0 6px 0 0">Ganti seluruh katalog</label>
+    <button class="go alt" id="ipaste" style="margin-top:0">Impor dari teks tempelan</button>
+    <p id="imsg" style="margin-top:10px"></p>
+    <input type="search" id="iq" placeholder="Cari di daftar barang" aria-label="Cari di daftar barang" style="margin-top:12px">
+    <div id="ilist" style="margin-top:4px"></div>
+  </section>
+
+  <section id="settings" class="hidden">
+    <div class="row"><h1>Pengaturan</h1><button class="link" id="setDone">Selesai</button></div>
+    <div class="cart" style="margin-top:0;padding:14px">
+      <label style="display:flex;gap:10px;align-items:center;font-weight:700;margin-bottom:14px"><input type="checkbox" id="fon" style="width:20px;height:20px;margin:0">Tambah biaya admin di setiap transaksi</label>
+      <label class="cap" for="flabel">Nama di struk</label>
+      <input type="text" id="flabel" placeholder="Biaya admin">
+      <label class="cap" for="ftype">Jenis biaya</label>
+      <select id="ftype"><option value="flat">Nominal tetap (Rp)</option><option value="pct">Persen dari total (%)</option></select>
+      <label class="cap" for="fval">Besar biaya</label>
+      <input type="number" id="fval" inputmode="decimal" min="0" placeholder="Contoh: 2000">
+      <label class="cap" for="fapply">Berlaku untuk</label>
+      <select id="fapply"><option value="all">Semua metode bayar</option><option value="qris">Hanya QRIS</option><option value="tunai">Hanya tunai</option></select>
+      <p id="fnote" style="margin:6px 0 0"></p>
+    </div>
+    <p style="margin-top:12px">Biaya dihitung satu kali per transaksi, bukan per barang. Perubahan tersimpan otomatis. QRIS yang dibuat sudah memakai total termasuk biaya admin.</p>
+  </section>
+
+  <section id="hist" class="hidden">
+    <div class="row"><h1>Riwayat hari ini</h1><button class="link" id="histBack">Kembali</button></div>
+    <div class="cart" id="hsum"></div>
+    <div id="hlist" style="margin-top:12px"></div>
+    <button class="go alt" id="hcsv">Salin semua transaksi (CSV)</button>
+    <button class="go alt" id="hclear" style="color:var(--danger)">Hapus riwayat</button>
+  </section>
+
+  <section id="cash" class="hidden">
+    <div class="row"><h1>Bayar tunai</h1><button class="link" id="cashBack">Kembali</button></div>
+    <div class="total" id="ctot"></div>
+    <div class="amount" id="camt"></div>
+    <div class="quick" id="quick"></div>
+    <div class="pad" id="cpad"></div>
+    <div class="total" id="chg" style="font-size:22px;min-height:34px"></div>
+    <button class="go" id="cashOk" disabled>Terima tunai</button>
+  </section>
+
+  <section id="result" class="hidden">
+    <div class="total" id="tot"></div>
+    <p style="text-align:center">Minta pembeli scan dengan aplikasi pembayaran apa pun.</p>
+    <div class="qrbox"><div id="qr"></div></div>
+    <button class="go" id="paid">Pembayaran diterima</button>
+    <button class="go alt" id="back">Kembali ke keranjang</button>
+  </section>
+
+  <section id="receipt" class="hidden">
+    <div class="row"><h1>Struk</h1></div>
+    <div class="receipt" id="rtext"></div>
+    <button class="go" id="share">Bagikan struk</button>
+    <button class="go alt" id="copy">Salin teks struk</button>
+    <button class="go alt" id="next">Transaksi baru</button>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const SCREENS = ["setup","shop","items","settings","hist","cash","result","receipt"];
+let staticQris = "", amount = "", cart = [], items = [], storeName = "", lastReceipt = "", payInfo = {m: "qris"}, cashStr = "", trx = [], curGroup = "", query = "", fee = {on: false, type: "flat", val: 0, apply: "all", label: "Biaya admin"};
+
+function save(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+function load(k){ try { return localStorage.getItem(k) || ""; } catch(e){ return ""; } }
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function fmt(n){ return Number(n || 0).toLocaleString("id-ID"); }
+function show(id){ SCREENS.forEach(x => $(x).classList.toggle("hidden", x !== id)); window.scrollTo(0, 0); }
+const total = () => cart.reduce((s, c) => s + c.price * c.qty, 0);
+function feeFor(m){
+  const t = total();
+  if (!fee.on || t <= 0 || !(fee.val > 0)) return 0;
+  if (fee.apply !== "all" && fee.apply !== m) return 0;
+  return fee.type === "pct" ? Math.round(t * fee.val / 100) : Math.round(fee.val);
+}
+const grand = m => total() + feeFor(m);
+const autoGroup = n => { const s = String(n).replace(/[\s\d.,]+(rb|k|ribu)?$/i, "").trim(); return s && s !== String(n).trim() ? s : "Lainnya"; };
+const grp = it => it.group || autoGroup(it.name);
+
+/* ---------- QRIS ---------- */
+function crc16(s){
+  let c = 0xFFFF;
+  for (let i = 0; i < s.length; i++){
+    c ^= s.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) c = (c & 0x8000) ? ((c << 1) ^ 0x1021) & 0xFFFF : (c << 1) & 0xFFFF;
+  }
+  return c.toString(16).toUpperCase().padStart(4, "0");
+}
+function parseTLV(s){
+  const out = []; let i = 0;
+  while (i + 4 <= s.length){
+    const len = parseInt(s.substr(i + 2, 2), 10);
+    if (isNaN(len)) throw new Error("bad");
+    out.push([s.substr(i, 2), s.substr(i + 4, len)]); i += 4 + len;
+  }
+  return out;
+}
+function validQris(s){
+  s = (s || "").trim();
+  return s.length > 30 && s.startsWith("000201") && crc16(s.slice(0, -4)) === s.slice(-4).toUpperCase();
+}
+function toDynamic(s, amt){
+  const tags = parseTLV(s.trim().slice(0, -8)).filter(t => t[0] !== "54" && t[0] !== "63");
+  tags.forEach(t => { if (t[0] === "01") t[1] = "12"; });
+  const pos = tags.findIndex(t => t[0] > "54");
+  tags.splice(pos < 0 ? tags.length : pos, 0, ["54", String(amt)]);
+  const body = tags.map(t => t[0] + String(t[1].length).padStart(2, "0") + t[1]).join("") + "6304";
+  return body + crc16(body);
+}
+
+/* ---------- Shop ---------- */
+function feeLines(){
+  const q = feeFor("qris"), c = feeFor("tunai"), same = q === c, L = esc(fee.label || "Biaya admin");
+  let h = "";
+  if (same && q) h += `<div class="line"><span>${L}</span><span></span><b>${fmt(q)}</b></div>`;
+  else {
+    if (q) h += `<div class="line"><span>${L} (QRIS)</span><span></span><b>${fmt(q)}</b></div>`;
+    if (c) h += `<div class="line"><span>${L} (tunai)</span><span></span><b>${fmt(c)}</b></div>`;
+  }
+  const label = same ? "Total" : "Subtotal";
+  return h + `<div class="line"><b>${label}</b><span></span><b>Rp ${fmt(total() + (same ? q : 0))}</b></div>`;
+}
+function drawGrid(){
+  if (!items.length){ $("chips").innerHTML = ""; $("grid").innerHTML = `<p style="grid-column:1/-1">Belum ada barang. Buka Barang untuk menambah, atau pakai Nominal bebas.</p>`; return; }
+  const names = []; items.forEach(it => { const g = grp(it); if (!names.includes(g)) names.push(g); });
+  if (curGroup && !names.includes(curGroup)) curGroup = "";
+  $("chips").innerHTML = names.length > 1 ? [""].concat(names).map(g => `<button data-g="${esc(g)}" class="${g === curGroup ? "on" : ""}">${g ? esc(g) : "Semua"}</button>`).join("") : "";
+  const q = query.trim().toLowerCase();
+  const list = items.filter(it => (!curGroup || grp(it) === curGroup) && (!q || it.name.toLowerCase().includes(q) || grp(it).toLowerCase().includes(q)))
+    .sort((a, b) => names.indexOf(grp(a)) - names.indexOf(grp(b)));
+  if (!list.length){ $("grid").innerHTML = `<p style="grid-column:1/-1">Tidak ada barang yang cocok.</p>`; return; }
+  let html = "", last = null;
+  list.forEach(it => {
+    const g = grp(it);
+    if (!curGroup && names.length > 1 && g !== last){ html += `<h2 class="gh">${esc(g)}</h2>`; last = g; }
+    const c = cart.find(x => x.key === it.id);
+    html += `<button class="item" data-id="${it.id}"><b>${esc(it.name)}</b><span>Rp ${fmt(it.price)}</span>${c ? `<i>${c.qty}</i>` : ""}</button>`;
+  });
+  $("grid").innerHTML = html;
+}
+$("q").oninput = e => { query = e.target.value; drawGrid(); };
+$("chips").onclick = e => { const b = e.target.closest("button[data-g]"); if (!b) return; curGroup = b.dataset.g; drawGrid(); };
+function drawShop(){
+  drawGrid();
+  $("cart").innerHTML = cart.length ? cart.map(c => `<div class="line"><div>${esc(c.name)}<small>Rp ${fmt(c.price)}</small></div>
+    <div class="qty"><button data-k="${c.key}" data-d="-1" aria-label="Kurangi">−</button><b>${c.qty}</b><button data-k="${c.key}" data-d="1" aria-label="Tambah">+</button></div>
+    <b>${fmt(c.price * c.qty)}</b></div>`).join("") + `${feeLines()}`
+    : `<p style="margin:14px 0">Keranjang kosong. Ketuk barang untuk menambahkan.</p>`;
+  $("pay").disabled = total() <= 0;
+  $("payCash").disabled = total() <= 0;
+  $("pay").textContent = total() > 0 ? "Bayar QRIS · Rp " + fmt(grand("qris")) : "Bayar QRIS";
+  $("payCash").textContent = total() > 0 ? "Bayar tunai · Rp " + fmt(grand("tunai")) : "Bayar tunai";
+}
+function add(key, name, price){
+  const c = cart.find(x => x.key === key);
+  c ? c.qty++ : cart.push({key, name, price, qty: 1});
+  drawShop();
+}
+$("grid").onclick = e => {
+  const b = e.target.closest(".item"); if (!b) return;
+  const it = items.find(x => x.id === b.dataset.id); if (it) add(it.id, it.name, it.price);
+};
+$("cart").onclick = e => {
+  const b = e.target.closest("button[data-k]"); if (!b) return;
+  const c = cart.find(x => x.key === b.dataset.k); if (!c) return;
+  c.qty += Number(b.dataset.d);
+  if (c.qty <= 0) cart = cart.filter(x => x !== c);
+  drawShop();
+};
+function tab(a){
+  $("paneA").classList.toggle("hidden", !a); $("paneB").classList.toggle("hidden", a);
+  $("tabA").classList.toggle("on", a); $("tabB").classList.toggle("on", !a);
+}
+$("tabA").onclick = () => tab(true); $("tabB").onclick = () => tab(false);
+
+["1","2","3","4","5","6","7","8","9","000","0","⌫"].forEach(k => {
+  const b = document.createElement("button"); b.textContent = k;
+  b.setAttribute("aria-label", k === "⌫" ? "Hapus" : k);
+  b.onclick = () => {
+    if (k === "⌫") amount = amount.slice(0, -1);
+    else if ((amount + k).length <= 9) amount = (amount + k).replace(/^0+/, "");
+    drawAmt();
+  };
+  $("pad").appendChild(b);
+});
+function drawAmt(){ $("amt").innerHTML = "<small>Rp</small>" + fmt(amount); }
+$("addFree").onclick = () => {
+  if (Number(amount) > 0){ add("f" + amount, "Nominal bebas", Number(amount)); amount = ""; drawAmt(); }
+};
+
+/* ---------- Pay & receipt ---------- */
+$("pay").onclick = () => {
+  $("qr").innerHTML = "";
+  new QRCode($("qr"), {text: toDynamic(staticQris, grand("qris")), width: 260, height: 260, correctLevel: QRCode.CorrectLevel.M});
+  $("tot").textContent = "Rp " + fmt(grand("qris"));
+  show("result");
+};
+/* Tunai */
+function drawCash(){
+  const p = Number(cashStr || 0), t = grand("tunai");
+  $("camt").innerHTML = "<small>Diterima Rp</small>" + fmt(p);
+  $("chg").textContent = p >= t ? "Kembalian Rp " + fmt(p - t) : (p > 0 ? "Kurang Rp " + fmt(t - p) : "");
+  $("cashOk").disabled = p < t;
+}
+["1","2","3","4","5","6","7","8","9","000","0","⌫"].forEach(k => {
+  const b = document.createElement("button"); b.textContent = k;
+  b.setAttribute("aria-label", k === "⌫" ? "Hapus" : k);
+  b.onclick = () => {
+    if (k === "⌫") cashStr = cashStr.slice(0, -1);
+    else if ((cashStr + k).length <= 9) cashStr = (cashStr + k).replace(/^0+/, "");
+    drawCash();
+  };
+  $("cpad").appendChild(b);
+});
+$("payCash").onclick = () => {
+  cashStr = "";
+  $("ctot").textContent = "Total Rp " + fmt(grand("tunai"));
+  $("quick").innerHTML = "";
+  [["Uang pas", grand("tunai")], ["20.000", 20000], ["50.000", 50000], ["100.000", 100000]].forEach(([l, v]) => {
+    const b = document.createElement("button"); b.textContent = l;
+    b.onclick = () => { cashStr = String(v); drawCash(); };
+    $("quick").appendChild(b);
+  });
+  drawCash(); show("cash");
+};
+$("cashBack").onclick = () => show("shop");
+$("cashOk").onclick = () => {
+  const p = Number(cashStr || 0);
+  payInfo = {m: "tunai", paid: p, change: p - grand("tunai")};
+  makeReceipt();
+};
+$("back").onclick = () => show("shop");
+function makeReceipt(){
+  const n = (Number(load("no")) || 0) + 1; save("no", n);
+  const d = new Date();
+  const tgl = d.toLocaleDateString("id-ID", {day:"2-digit", month:"short", year:"numeric"});
+  const jam = d.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit", second:"2-digit", timeZoneName:"short"}).replace(/\./g, ":");
+  const L = [];
+  L.push((storeName || "Struk Pembayaran").toUpperCase(), "No. " + String(n).padStart(4, "0"), "Tanggal: " + tgl, "Waktu  : " + jam, "--------------------------------");
+  cart.forEach(c => { L.push(c.name, "  " + c.qty + " x " + fmt(c.price) + "   Rp " + fmt(c.qty * c.price)); });
+  const f = feeFor(payInfo.m), gt = total() + f;
+  L.push("--------------------------------");
+  if (f) L.push("Subtotal Rp " + fmt(total()), (fee.label || "Biaya admin") + " Rp " + fmt(f));
+  L.push("TOTAL    Rp " + fmt(gt));
+  if (payInfo.m === "tunai") L.push("Tunai    Rp " + fmt(payInfo.paid), "Kembali  Rp " + fmt(payInfo.change), "Dibayar tunai (LUNAS)");
+  else L.push("Dibayar via QRIS (LUNAS)");
+  L.push("", "Terima kasih");
+  lastReceipt = L.join("\n");
+  trx.push({no: n, t: d.toISOString(), m: payInfo.m, fee: f, total: gt, txt: lastReceipt});
+  if (trx.length > 1000) trx = trx.slice(-1000);
+  save("trx", JSON.stringify(trx));
+  $("rtext").textContent = lastReceipt;
+  $("share").classList.toggle("hidden", !navigator.share);
+  show("receipt");
+}
+$("paid").onclick = () => { payInfo = {m: "qris"}; makeReceipt(); };
+$("share").onclick = () => { try { navigator.share({text: lastReceipt}); } catch(e){} };
+$("copy").onclick = async () => {
+  try { await navigator.clipboard.writeText(lastReceipt); $("copy").textContent = "Tersalin"; }
+  catch(e){ $("copy").textContent = "Tekan lama teks struk untuk menyalin"; }
+  setTimeout(() => $("copy").textContent = "Salin teks struk", 2000);
+};
+$("next").onclick = () => { cart = []; amount = ""; drawAmt(); drawShop(); show("shop"); };
+
+/* ---------- Catalog ---------- */
+function drawItems(){
+  const gs = []; items.forEach(it => { const g = grp(it); if (!gs.includes(g)) gs.push(g); });
+  $("glist").innerHTML = gs.map(g => `<option value="${esc(g)}">`).join("");
+  const q = ($("iq").value || "").trim().toLowerCase();
+  const list = items.filter(it => !q || it.name.toLowerCase().includes(q) || grp(it).toLowerCase().includes(q));
+  $("ilist").innerHTML = !items.length ? `<p>Belum ada barang.</p>` : !list.length ? `<p>Tidak ada yang cocok.</p>` :
+    list.slice(0, 100).map(it => `<div class="mrow" style="align-items:flex-start;gap:8px"><span style="flex:1">${esc(it.name)}<br><small style="color:var(--muted)">Rp ${fmt(it.price)}</small><input type="text" list="glist" data-gid="${it.id}" value="${esc(grp(it))}" aria-label="Kelompok" style="margin:6px 0 0;padding:8px"></span><button data-id="${it.id}">Hapus</button></div>`).join("") + (list.length > 100 ? `<p>Menampilkan 100 dari ${list.length}. Persempit dengan pencarian.</p>` : "");
+}
+$("toItems").onclick = () => { $("store").value = storeName; drawItems(); show("items"); };
+$("itemsDone").onclick = () => { storeName = $("store").value.trim(); save("store", storeName); drawShop(); show("shop"); };
+$("iadd").onclick = () => {
+  const name = $("iname").value.trim(), price = Math.round(Number($("iprice").value));
+  if (!name || !(price > 0)) return;
+  items.push({id: "i" + Date.now(), name, price, group: $("igroup").value.trim()}); save("items", JSON.stringify(items));
+  $("iname").value = ""; $("iprice").value = ""; drawItems();
+};
+$("iq").oninput = drawItems;
+$("ilist").onchange = e => {
+  const i = e.target.closest("input[data-gid]"); if (!i) return;
+  const it = items.find(x => x.id === i.dataset.gid); if (!it) return;
+  it.group = i.value.trim(); save("items", JSON.stringify(items)); drawShop();
+};
+$("ilist").onclick = e => {
+  const b = e.target.closest("button[data-id]"); if (!b) return;
+  items = items.filter(x => x.id !== b.dataset.id); cart = cart.filter(c => c.key !== b.dataset.id);
+  save("items", JSON.stringify(items)); drawItems();
+};
+
+/* ---------- Riwayat ---------- */
+const dayKey = d => d.getFullYear() + "-" + d.getMonth() + "-" + d.getDate();
+function drawHist(){
+  const today = dayKey(new Date());
+  const list = trx.filter(x => dayKey(new Date(x.t)) === today);
+  const sum = m => list.filter(x => x.m === m).reduce((s, x) => s + x.total, 0);
+  $("hsum").innerHTML = `<div class="mrow"><span>Jumlah transaksi</span><b>${list.length}</b></div>
+    <div class="mrow"><span>Tunai</span><b>Rp ${fmt(sum("tunai"))}</b></div>
+    <div class="mrow"><span>QRIS</span><b>Rp ${fmt(sum("qris"))}</b></div>
+    <div class="mrow" style="border-bottom:0"><b>Total</b><b>Rp ${fmt(sum("tunai") + sum("qris"))}</b></div>`;
+  $("hlist").innerHTML = list.length ? list.slice().reverse().map(x => `<details style="border-bottom:1px solid var(--line);padding:10px 0"><summary style="cursor:pointer;display:flex;justify-content:space-between;gap:8px"><span>No. ${String(x.no).padStart(4, "0")}, ${new Date(x.t).toLocaleTimeString("id-ID", {hour: "2-digit", minute: "2-digit"})}, ${x.m === "tunai" ? "Tunai" : "QRIS"}</span><b>Rp ${fmt(x.total)}</b></summary><div class="receipt" style="margin-top:8px">${esc(x.txt)}</div></details>`).join("") : "<p>Belum ada transaksi hari ini.</p>";
+}
+$("toHist").onclick = () => { drawHist(); show("hist"); };
+$("histBack").onclick = () => show("shop");
+$("hcsv").onclick = async () => {
+  const rows = ["no,waktu,metode,biaya_admin,total"].concat(trx.map(x => [x.no, x.t, x.m, x.fee || 0, x.total].join(",")));
+  try { await navigator.clipboard.writeText(rows.join("\n")); $("hcsv").textContent = "Tersalin, tempel ke spreadsheet"; }
+  catch(e){ $("hcsv").textContent = "Gagal menyalin"; }
+  setTimeout(() => $("hcsv").textContent = "Salin semua transaksi (CSV)", 2500);
+};
+let armed = false;
+$("hclear").onclick = () => {
+  if (!armed){
+    armed = true; $("hclear").textContent = "Ketuk lagi untuk hapus semua riwayat";
+    setTimeout(() => { armed = false; $("hclear").textContent = "Hapus riwayat"; }, 3000);
+    return;
+  }
+  trx = []; save("trx", "[]"); armed = false; $("hclear").textContent = "Hapus riwayat"; drawHist();
+};
+
+/* ---------- Impor spreadsheet ---------- */
+function toPrice(v){
+  if (typeof v === "number") return Math.round(v);
+  const d = String(v == null ? "" : v).replace(/\D/g, "");
+  return d ? parseInt(d, 10) : 0;
+}
+function textRows(t){
+  return t.split(/\r?\n/).map(l => {
+    if (!l.trim()) return null;
+    if (l.includes("\t")){ const p = l.split("\t"); return [p[0], p[1], p[2]]; }
+    if (l.split(";").length === 3) return l.split(";");
+    const i = Math.max(l.lastIndexOf(";"), l.lastIndexOf(","));
+    return i < 0 ? [l, ""] : [l.slice(0, i), l.slice(i + 1)];
+  }).filter(Boolean);
+}
+function importRows(rows){
+  if ($("replace").checked){ items = []; cart = cart.filter(c => c.key[0] !== "i"); }
+  let a = 0, u = 0, s = 0;
+  rows.forEach((r, n) => {
+    const name = String(r[0] == null ? "" : r[0]).replace(/^"|"$/g, "").trim(), price = toPrice(r[1]), gr = String(r[2] == null ? "" : r[2]).trim();
+    if (!name || price <= 0){ s++; return; }
+    const ex = items.find(x => x.name.toLowerCase() === name.toLowerCase());
+    if (ex){ ex.price = price; if (gr) ex.group = gr; const c = cart.find(x => x.key === ex.id); if (c) c.price = price; u++; }
+    else { items.push({id: "i" + Date.now() + "_" + n, name, price, group: gr}); a++; }
+  });
+  save("items", JSON.stringify(items)); drawItems(); drawShop();
+  $("imsg").textContent = a + " barang ditambah, " + u + " diperbarui, " + s + " baris dilewati (judul atau harga kosong).";
+}
+$("ifile").onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    if (/\.(csv|txt)$/i.test(f.name)) importRows(textRows(await f.text()));
+    else {
+      const wb = XLSX.read(await f.arrayBuffer(), {type: "array"});
+      importRows(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1, raw: true}));
+    }
+  } catch(err){ $("imsg").textContent = "File tidak bisa dibaca. Pakai .xlsx, .xls, atau .csv dengan nama di kolom A dan harga di kolom B."; }
+  e.target.value = "";
+};
+$("ipaste").onclick = () => { importRows(textRows($("itext").value)); $("itext").value = ""; };
+
+/* ---------- Pengaturan ---------- */
+function feeNote(){
+  if (!fee.on || !(fee.val > 0)) return "Biaya admin nonaktif.";
+  const ex = fee.type === "pct" ? Math.round(50000 * fee.val / 100) : Math.round(fee.val);
+  const w = fee.apply === "all" ? "semua metode bayar" : fee.apply === "qris" ? "pembayaran QRIS saja" : "pembayaran tunai saja";
+  return "Contoh: transaksi Rp 50.000 kena biaya Rp " + fmt(ex) + ", berlaku untuk " + w + ".";
+}
+function drawSet(){
+  $("fon").checked = fee.on; $("ftype").value = fee.type; $("fval").value = fee.val || "";
+  $("fapply").value = fee.apply; $("flabel").value = fee.label === "Biaya admin" ? "" : fee.label;
+  $("fnote").textContent = feeNote();
+}
+function saveSet(){
+  fee = {on: $("fon").checked, type: $("ftype").value, val: Math.max(0, Number($("fval").value) || 0), apply: $("fapply").value, label: $("flabel").value.trim() || "Biaya admin"};
+  save("fee", JSON.stringify(fee)); $("fnote").textContent = feeNote();
+}
+["fon","ftype","fval","fapply","flabel"].forEach(id => { $(id).addEventListener("input", saveSet); $(id).addEventListener("change", saveSet); });
+$("toSet").onclick = () => { drawSet(); show("settings"); };
+$("setDone").onclick = () => { drawShop(); show("shop"); };
+
+/* ---------- Setup ---------- */
+$("change").onclick = () => { $("raw").value = ""; $("err").textContent = ""; show("setup"); };
+function saveQris(text){
+  text = (text || "").trim();
+  if (!validQris(text)){ $("err").textContent = "QRIS tidak terbaca atau tidak valid. Coba gambar yang lebih jelas atau tempel teksnya."; return; }
+  staticQris = text; save("qris", text); $("err").textContent = ""; drawShop(); show("shop");
+}
+$("save").onclick = () => saveQris($("raw").value);
+$("file").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement("canvas"), r = Math.min(1, 1400 / Math.max(img.width, img.height));
+    c.width = img.width * r; c.height = img.height * r;
+    const x = c.getContext("2d"); x.drawImage(img, 0, 0, c.width, c.height);
+    const d = x.getImageData(0, 0, c.width, c.height), res = jsQR(d.data, d.width, d.height);
+    if (res){ $("raw").value = res.data; saveQris(res.data); }
+    else $("err").textContent = "QR tidak ditemukan di gambar. Pastikan hanya QRIS yang terlihat, atau tempel teksnya.";
+  };
+  img.src = URL.createObjectURL(f);
+};
+
+/* ---------- Init ---------- */
+try { items = JSON.parse(load("items") || "[]"); } catch(e){ items = []; }
+try { trx = JSON.parse(load("trx") || "[]"); } catch(e){ trx = []; }
+storeName = load("store"); staticQris = load("qris");
+try { fee = Object.assign(fee, JSON.parse(load("fee") || "{}")); } catch(e){}
+drawAmt(); drawShop();
+validQris(staticQris) ? show("shop") : show("setup");
+</script>
+<script>
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
+</script>
+</body>
+</html>
