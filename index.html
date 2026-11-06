@@ -7,9 +7,6 @@
 <meta name="theme-color" content="#0b57d0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Kasir QRIS">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon-192.png">
-<link rel="apple-touch-icon" href="icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f2f4f7;--surface:#fff;--ink:#12202e;--muted:#5d6b7a;--line:#d9dfe6;--accent:#0b57d0;--accent-ink:#fff;--danger:#b3261e;
@@ -339,10 +336,9 @@ $("back").onclick = () => show("shop");
 function makeReceipt(){
   const n = (Number(load("no")) || 0) + 1; save("no", n);
   const d = new Date();
-  const tgl = d.toLocaleDateString("id-ID", {day:"2-digit", month:"short", year:"numeric"});
-  const jam = d.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit", second:"2-digit", timeZoneName:"short"}).replace(/\./g, ":");
+  const tgl = d.toLocaleDateString("id-ID", {day:"2-digit", month:"short", year:"numeric"}) + " " + d.toLocaleTimeString("id-ID", {hour:"2-digit", minute:"2-digit"});
   const L = [];
-  L.push((storeName || "Struk Pembayaran").toUpperCase(), "No. " + String(n).padStart(4, "0"), "Tanggal: " + tgl, "Waktu  : " + jam, "--------------------------------");
+  L.push((storeName || "Struk Pembayaran").toUpperCase(), "No. " + String(n).padStart(4, "0"), tgl, "--------------------------------");
   cart.forEach(c => { L.push(c.name, "  " + c.qty + " x " + fmt(c.price) + "   Rp " + fmt(c.qty * c.price)); });
   const f = feeFor(payInfo.m), gt = total() + f;
   L.push("--------------------------------");
@@ -517,10 +513,6 @@ storeName = load("store"); staticQris = load("qris");
 try { fee = Object.assign(fee, JSON.parse(load("fee") || "{}")); } catch(e){}
 drawAmt(); drawShop();
 validQris(staticQris) ? show("shop") : show("setup");
-</script>
-<script>
-if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
-try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch(e){}
 </script>
 </body>
 </html>
